@@ -1,3 +1,5 @@
+const _ = require('lodash'); //_ is used as a variable
+
 //Library imports
 const express = require('express');
 const bodyParser  = require ('body-parser');
@@ -81,6 +83,43 @@ app.delete('/todos/:id', (req, res) => {
             res.status(400).send();
         }
     );
+});
+
+//Update
+app.patch('/todos/:id', (req, res) => {
+    var id = req.params.id;
+    var body = _.pick(req.body, ['text', 'completed']);
+    if (!ObjectID.isValid(id)){
+        return res.status(404).send();
+    }
+    //Say user set completed to true we may want to
+    //completedAt with a datetime stamp
+    //clear if false
+    //by checking if the body.completed is a boolean
+    //  and if it is true
+    if(_.isBoolean(body.completed) 
+      && body.completed){
+          body.completedAt = new Date().getTime();
+          //JS timestamp from 1970 moment forward name for that date
+    }
+    else{
+        body.completed = false;
+        body.completedAt = null;
+    }
+
+    //In mongodb we use returnOriginal : false indicating
+    // to return the changed object
+    //similarly in mongoose we need to use the way it provides
+    // as new: true showing return the changed (new)state
+    Todo.findByIdAndUpdate
+     (id, {$set: body}, {new: true})
+     .then((todo) => {
+        if (!todo){
+            return res.status(404).send();
+        }
+        res.send({todo});
+    })
+    .catch((err) => res.status(400).send());
 });
 
 //Add listener
