@@ -61,6 +61,28 @@ app.get('/todos/:id', (req, res) => {
     }) ;
 });
 
+//Delete by id
+app.delete('/todos/:id', (req, res) => {
+    //get the id
+    var id = req.params.id;
+    //validation
+    if (!ObjectID.isValid(id)){
+        return res.status(404).send('Invalid id');
+    }
+    
+    //findbyidandremove
+    Todo.findByIdAndRemove(id)
+        .then((todo) => {
+            if (!todo){
+                return res.status(404).send();
+            }
+            res.send({todo});
+        }).catch((e) => {
+            res.status(400).send();
+        }
+    );
+});
+
 //Add listener
 app.listen(port, () => {
     console.log(`Started node-todo-api on port ${port}`);
