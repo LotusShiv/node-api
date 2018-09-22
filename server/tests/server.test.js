@@ -10,7 +10,7 @@ const {Todo} = require('./../models/todo.js');
 //     Todo.remove({}).then(() => done());
 // });
 //Add some seed data
-const todosNew = [
+const todos = [
     {_id: new ObjectID(), text: 'First todo'},
     {_id: new ObjectID(),text: 'Second todo'}
 ];
@@ -19,7 +19,7 @@ const todosNew = [
 beforeEach((done) => {
     Todo.remove({}).then(() => {
        //insertMany
-       return Todo.insertMany(todosNew); 
+       return Todo.insertMany(todos); 
     }).then(() => done());
 });
 
@@ -89,7 +89,7 @@ describe('Get /todos', () => {
 
 //find by id tests
 describe('Get /todos/:id', () => {
-    var id = todosNew[0]._id.toHexString();
+    var id = todos[0]._id.toHexString();
     console.log('id', id);
     
     //positive
@@ -98,7 +98,7 @@ describe('Get /todos/:id', () => {
         .get (`/todos/${id}`)
         .expect(200)
         .expect((res) => {
-            expect(res.body.todo.text).toBe(todosNew[0].text);
+            expect(res.body.todo.text).toBe(todos[0].text);
         })
         .end(done);
     });
@@ -119,5 +119,47 @@ describe('Get /todos/:id', () => {
         .get(`/todos/${id}`)
         .expect(404)
         .end(done); 
+    });
+});
+
+//Delete
+describe('DELETE /todos/:id', () =>{
+    it('should remove a todo findOneAndRemove', (done) => {
+        var hexId = todos[1]._id.toHexString();
+
+        request(app)
+          .delete(`/todos/${hexId}`)
+          .expect(200)
+          .expect((res) => {
+              expect(res.body.todo._id).toBe(hexId);
+          })
+          .end((err, res) => {
+            if (err){
+                return done(err);
+            }
+            //Now lets see if the id exists in db 
+            //it shouldn't exist so return 404
+            Todo.findById(hexId).then((todo) => {
+                expect(todo).toNotExist();
+                done();
+            })
+            .catch((err) => done(err));
+        });
+    });
+
+    it('should return 404 if todo not found', (done) => {
+        id = new ObjectID().toHexString();
+        request(app)
+        .delete(`/todos/${id}`)
+        .expect(404)
+        .end(done); 
+    });
+
+    it('should return 404 if objectID is invalid', (done) => {
+        id = '1113';
+        request(app)
+        .delete(`/todos/${id}`)
+        .expect(404)
+        .end(done);
     });
 });
