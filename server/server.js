@@ -1,3 +1,5 @@
+require('./config/config');
+
 const _ = require('lodash'); //_ is used as a variable
 
 //Library imports

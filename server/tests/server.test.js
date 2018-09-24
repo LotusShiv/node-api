@@ -11,8 +11,16 @@ const {Todo} = require('./../models/todo.js');
 // });
 //Add some seed data
 const todos = [
-    {_id: new ObjectID(), text: 'First todo'},
-    {_id: new ObjectID(),text: 'Second todo'}
+    {
+        _id: new ObjectID(), 
+        text: 'dinner'
+    },
+    {
+        _id: new ObjectID(),
+        text: 'Second todo',
+        completed: true,
+        completedAt: 3333
+    }
 ];
 
 //Run this before each test script
@@ -161,5 +169,79 @@ describe('DELETE /todos/:id', () =>{
         .delete(`/todos/${id}`)
         .expect(404)
         .end(done);
+    });
+});
+
+//Update
+describe('PATCH /todos/:id', () => {
+    var hexId = '';
+    var doc = {};
+    doc = {
+        completed: true,
+        text: 'Dinner now'
+    };
+    it('should update the todo', 
+      (done) => {
+        hexId = todos[0]._id.toHexString();
+        console.log('Test 1 id[0] ', hexId);
+        request(app)
+        .patch(`/todos/${hexId}`)
+        .send(doc)
+        .expect(200)
+        .expect((res) => {
+            expect(res.body.todo.text).toBe(doc.text);
+            expect(res.body.todo.completed).toBe(true);
+            expect(res.body.todo.completedAt).toBeA('number');
+        })
+        //.end(done);
+        .end((err, res) => {
+          if (err){
+              console.log('err', err);
+              return done(err);
+          }
+          //Check in database
+          Todo.findByIdAndUpdate(hexId 
+            ,{$set:doc}
+            ,{new:true}).then((todo) => {
+              expect(todo).toExist();
+              //expect(todo.completed).toBe(true);
+              //expect(todo.completedAt).toBeA('number');
+              done();
+          })
+          .catch((err) => done(err));
+        });
+    });
+
+    it('should clear completedAt when todo is not completed', 
+      (done) => {
+        hexId = todos[1]._id.toHexString();
+        doc = {
+            "text": 'Time to sleep later',
+            "completed": false
+        };
+        request(app)
+        .patch(`/todos/${hexId}`)
+        .send(doc)
+        .expect(200)
+        .expect((res) => {
+            expect(res.body.todo._id).toBe(hexId);
+            expect(res.body.todo.completed).toBe(false);
+            expect(res.body.todo.completedAt).toNotBeA('number');
+        })
+        //.end(done)
+        .end((err, res) => {
+          if (err){
+              return done(err);
+          }
+          //Now lets see if the id exists in db 
+          //it shouldn't exist so return 404
+          Todo.findByIdAndUpdate(hexId 
+            ,{$set:{doc}}
+            ,{new:true}).then((todo) => {
+              expect(todo).toExist();
+              done();
+          })
+          .catch((err) => done(err));
+      });
     });
 });
