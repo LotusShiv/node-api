@@ -13,7 +13,7 @@ var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
 
-//Start an express app
+//Start an express appa
 var app = express();
 //set app to use current environment port variable
 const port = process.env.PORT || 3000;
@@ -124,9 +124,36 @@ app.patch('/todos/:id', (req, res) => {
     .catch((err) => res.status(400).send());
 });
 
+
+//***************************************
+//Users
+//POST /todos
+app.post('/users', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    var user = new User(body);
+    
+    //This argument (user) is identical to the one defined 
+    //above in memory, so we can reuse and dont have to pass in 
+    //user.save().then((user) => {
+    //instead we can use
+    user.save().then(() => {
+        //res.send(user);
+        //we instead do this
+        return user.generateAuthToken();
+    }).then((token) => {  //we chain the promise as we want to use the token response
+        //we need to make the response - goal is to send the
+        //http response header by creating a custom header
+        //not a default http supported header, but is a custom header
+        //x-auth that's specific to jwt tokens scheme
+        res.header('x-auth', token).send(user);
+    })
+    .catch((e) => {
+        res.status(400).send(e);
+    });
+});
 //Add listener
 app.listen(port, () => {
-    console.log(`Started node-todo-api on port ${port}`);
+    console.log(`Started node-api on port ${port}`);
 });
 
 //We need to export the app object so we can use 
