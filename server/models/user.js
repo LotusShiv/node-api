@@ -81,6 +81,32 @@ UserSchema.methods.generateAuthToken = function(){
     });
 };
 
+//statics - turns into a model method than an instance 
+//method 
+UserSchema.statics.findByToken = function(token){
+    var User = this;  //model object hence we use User
+    var decoded; //undefined variable 
+
+    //We will use try-catch that way we can catch
+    // any error that jwt throw
+    try{
+        decoded = jwt.verify(token, 'abc123');
+    }
+    catch(e) {
+        // return new Promise((resolve, reject) => {
+        //     reject(); //this will get caught in server.js
+        // });
+        //instead we can simplify to
+        return Promise.reject(e.message); //will get used as a error to the catch method
+    }
+    //Her we will query the nested object properties
+    return User.findOne({
+        '_id': decoded._id,
+        'tokens.token': token,
+        'tokens.access': 'auth'
+    });
+};
+
 var User = mongoose.model('User', UserSchema);
 
 module.exports = {User};

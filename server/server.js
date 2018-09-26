@@ -12,6 +12,7 @@ const {ObjectID} = require('mongodb');
 var {mongoose} = require('./db/mongoose');
 var {Todo} = require('./models/todo');
 var {User} = require('./models/user');
+var {authenticate} = require('./middleware/authenticate');
 
 //Start an express appa
 var app = express();
@@ -151,6 +152,29 @@ app.post('/users', (req, res) => {
         res.status(400).send(e);
     });
 });
+
+//Once we have the middleware method authenticate
+//change the route signature
+//First private route to know about the current user
+// app.get('/users/me', (req, res) => {
+//     var token = req.header('x-auth');
+//     //we are going to use a model method
+//     //verify the token and fetch the user
+//     User.findByToken(token).then((user) => {
+//         if (!user){
+//             //return res.status(401).send();
+//             //Instead we can just send a Promise.reject()
+//             Promise.reject();
+//         }
+//         res.send(user);
+//     }).catch((e) => {
+//         res.status(401).send();
+//     });
+// });
+app.get('/users/me', authenticate, (req, res) => {
+    res.send(req.user);
+});
+
 //Add listener
 app.listen(port, () => {
     console.log(`Started node-api on port ${port}`);
