@@ -2,6 +2,7 @@ const mongoose = require('mongoose'); //load the regular mongoose library
 const validator = require('validator');
 const jwt = require('jsonwebtoken');
 const _ = require('lodash');
+const bcrypt = require('bcryptjs');
 
 //We can't add methods to User but instead we use mongoose
 //Schema which provides us with the capability to add all the
@@ -106,6 +107,26 @@ UserSchema.statics.findByToken = function(token){
         'tokens.access': 'auth'
     });
 };
+
+UserSchema.pre('save', function(next){
+    var user = this;
+    //we can check if the pwd was modified
+    //next time when we update say not the pwd field
+    //but the email, then the pwd which was already hashed
+    //will get hashed again and the verify will fail
+    //hence we need to make sure to check
+    if (user.isModified('password')){
+        bcrypt.genSalt(10, (err, salt) => {
+            bcrypt.hash(user.password, salt, (err, hash) => {
+                user.password = hash;
+                next(); //complete the middleware
+            });
+        });
+    }
+    else{
+        next();
+    }
+});
 
 var User = mongoose.model('User', UserSchema);
 
