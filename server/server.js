@@ -156,23 +156,27 @@ app.post('/users', (req, res) => {
 //Once we have the middleware method authenticate
 //change the route signature
 //First private route to know about the current user
-// app.get('/users/me', (req, res) => {
-//     var token = req.header('x-auth');
-//     //we are going to use a model method
-//     //verify the token and fetch the user
-//     User.findByToken(token).then((user) => {
-//         if (!user){
-//             //return res.status(401).send();
-//             //Instead we can just send a Promise.reject()
-//             Promise.reject();
-//         }
-//         res.send(user);
-//     }).catch((e) => {
-//         res.status(401).send();
-//     });
-// });
 app.get('/users/me', authenticate, (req, res) => {
     res.send(req.user);
+});
+
+//dedicated route for logging in users
+//cannot use authenticate we dont have a token here
+// as we are trying to get a token
+app.post('/users/login', (req, res) => {
+    var body = _.pick(req.body, ['email', 'password']);
+    //console.log('body.email', body.email);
+    // 
+    User.findByCredentials(body.email, body.password)
+        .then((user) => {
+           //res.send(user);
+           //instead we send back a user with
+           // an authenticated token
+           user.generateAuthToken().then((token) => {
+              res.header('x-auth', token).send(user);
+           });
+        })
+        .catch((e) => res.status(400).send());    
 });
 
 //Add listener

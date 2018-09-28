@@ -100,11 +100,33 @@ UserSchema.statics.findByToken = function(token){
         //instead we can simplify to
         return Promise.reject(e.message); //will get used as a error to the catch method
     }
-    //Her we will query the nested object properties
+    //Here we will query the nested object properties
     return User.findOne({
         '_id': decoded._id,
         'tokens.token': token,
         'tokens.access': 'auth'
+    });
+};
+
+//Find user by credentials - creating a model method
+UserSchema.statics.findByCredentials = function(email, password){
+    var User = this;
+    return User.findOne({email}).then((user) => {
+        if (!user){
+            return Promise.reject();
+        }
+        //bcrypt doesn't support promise but we can
+        //wrap the call with a Promise
+        return new Promise((resolve, reject) => {
+            bcrypt.compare(password, user.password, (err, res) => {
+                if(res){
+                    resolve(user); //resolve the promise
+                }
+                else{
+                    reject(); //this will send a 400 back
+                }
+            });
+        });
     });
 };
 
