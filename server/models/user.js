@@ -10,7 +10,7 @@ const bcrypt = require('bcryptjs');
 var UserSchema = new mongoose.Schema({
     email: {
         type: String,
-        minlength: 1,
+        minlength: 10,
         required: true,
         trim: true,
         unique: true, //email doesn't already exist 
