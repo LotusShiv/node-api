@@ -13,14 +13,8 @@ var UserSchema = new mongoose.Schema({
         minlength: 10,
         required: true,
         trim: true,
-        unique: true, //email doesn't already exist 
-        //we are going to use validator library 
-        //for validating the email
+        unique: true, 
         validate: {
-            // validator: (value) => {
-            //     return validator.isEmail(value);
-            // },
-            //instead we can do as a method to use to validate
             validator: validator.isEmail,
             message: `${this} is not a valid email`
         }

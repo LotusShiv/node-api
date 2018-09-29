@@ -27,10 +27,11 @@ app.use(bodyParser.json());
 
 //Start configuring the routes
 //Create
-app.post('/todos', (req, res) => {
+app.post('/todos', authenticate, (req, res) => {
     //Get user input
     var todo = new Todo({
-        text: req.body.text
+        text: req.body.text,
+        _creator: req.user._id
     });
     //Save info
     todo.save().then((doc) => {
@@ -41,8 +42,11 @@ app.post('/todos', (req, res) => {
 });
 
 //Get
-app.get('/todos', (req, res) => {
-  Todo.find().then((todos) => {
+app.get('/todos', authenticate, (req, res) => {
+  //Todo.find().then((todos) => {
+  //Instead do this to fetch only the ones that
+  //created by the logged in user
+  Todo.find({_creator: req.user._id}).then((todos) => {
     res.send({todos});
   }, (e) => {
     res.status(400).send(e);
@@ -50,13 +54,21 @@ app.get('/todos', (req, res) => {
 });
 
 //find by id
-app.get('/todos/:id', (req, res) => {
+app.get('/todos/:id', authenticate, (req, res) => {
     var id = req.params.id;
     //validation
     if (!ObjectID.isValid(id)){
         return res.status(404).send('Invalid id');
     }
-    Todo.findById(id).then((todo) => {
+
+    //This way the current logged in user can see anyone
+    // else's data by passing the id
+    //Todo.findById(id).then((todo) => {
+    //So we change it to
+    Todo.findOne({
+        _id: id,
+        _creator: req.user._id
+    }).then((todo) => {
         if (!todo){
             return res.status(404).send();
         }
@@ -67,7 +79,7 @@ app.get('/todos/:id', (req, res) => {
 });
 
 //Delete by id
-app.delete('/todos/:id', (req, res) => {
+app.delete('/todos/:id', authenticate, (req, res) => {
     //get the id
     var id = req.params.id;
     //validation
@@ -75,8 +87,15 @@ app.delete('/todos/:id', (req, res) => {
         return res.status(404).send('Invalid id');
     }
     
-    //findbyidandremove
-    Todo.findByIdAndRemove(id)
+    //This will find the document created by someone else
+    //Todo.findByIdAndRemove(id)
+    //Instead we have to use findOneAndRemove(id)
+    //so we find the one created by the current logged in user
+    //and the creater of the document
+    Todo.findOneAndRemove({
+            _id: id,
+            _creator: req.user._id
+        })
         .then((todo) => {
             if (!todo){
                 return res.status(404).send();
@@ -89,7 +108,7 @@ app.delete('/todos/:id', (req, res) => {
 });
 
 //Update
-app.patch('/todos/:id', (req, res) => {
+app.patch('/todos/:id', authenticate, (req, res) => {
     var id = req.params.id;
     var body = _.pick(req.body, ['text', 'completed']);
     if (!ObjectID.isValid(id)){
@@ -114,8 +133,12 @@ app.patch('/todos/:id', (req, res) => {
     // to return the changed object
     //similarly in mongoose we need to use the way it provides
     // as new: true showing return the changed (new)state
-    Todo.findByIdAndUpdate
-     (id, {$set: body}, {new: true})
+    //Todo.findByIdAndUpdate
+    //(id, {$set: body}, {new: true})
+    //We have to use findOneAndUpdate as we need to find
+    //the todo document created by the current user
+    Todo.findOneAndUpdate
+     ({_id: id, _creator: req.user._id}, {$set: body}, {new: true})
      .then((todo) => {
         if (!todo){
             return res.status(404).send();
