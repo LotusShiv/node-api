@@ -179,6 +179,24 @@ app.post('/users/login', (req, res) => {
         .catch((e) => res.status(400).send());    
 });
 
+//DELETE token route
+//NOTE: 1. all we need to make sure that the currently
+//      logged in user deleting is authenticated
+//      we are not going to send any token, instead
+//      we are going to make this route just private
+//      and add the token via the authenticate method
+//      2. in order to delete the token for the currently
+//      logged in user, the user has to be in the users
+//      collection in the db as well.
+app.delete('/users/me/token', authenticate, (req, res) => {
+    //we use the instance method to do the actual delete
+    req.user.removeToken(req.token).then(() => {
+        res.status(200).send();
+    }, () => {
+        res.status(400).send();
+    });
+});
+
 //Add listener
 app.listen(port, () => {
     console.log(`Started node-api on port ${port}`);
