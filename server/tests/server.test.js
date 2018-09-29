@@ -360,3 +360,27 @@ describe('POST /users/login', () => {
         });
     });
 });
+
+//Delete token
+describe('DELETE /users/me/token', () => {
+    it('should delete the auth token on logout', (done) => {
+        request(app)
+        .delete('/users/me/token')
+        //set the x-auth header to the token from the seed user
+        //i.e. users[0]
+        .set('x-auth', users[0].tokens[0].token)
+        .send()
+        .expect(200)
+        .end((err, res) => {
+            if (err){
+                return done(err);
+            }
+            User.findById(users[0]._id)
+            .then((user) => {
+                expect(user.tokens.length).toBe(0);
+                done();
+            })
+            .catch((e) => done(e));
+        });
+    });
+});

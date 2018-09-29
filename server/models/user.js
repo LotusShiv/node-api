@@ -154,7 +154,7 @@ UserSchema.methods.removeToken = function(token){
     //we will use a mongodb operator $pull
     var user = this;
 
-    return user.update({
+    return user.updateOne({
         $pull: {
             tokens: {token}
         }
