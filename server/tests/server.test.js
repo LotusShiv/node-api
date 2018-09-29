@@ -81,7 +81,7 @@ describe('Get /todos', () => {
 //find by id tests
 describe('Get /todos/:id', () => {
     var id = todos[0]._id.toHexString();
-    console.log('id', id);
+    //console.log('id', id);
     
     //positive
     it('should get by id', (done) => {
@@ -282,7 +282,7 @@ describe('Post /users', () => {
                 //if so then we haven't hashed that leads to problems
                 expect(user.password).toNotBe(password);
                 done();
-            });
+            }).catch((e) => done(e));
         });
     });
 
@@ -302,5 +302,61 @@ describe('Post /users', () => {
         .send({email: users[1].email, password: 'newpwd12'})
         .expect(400)
         .end(done);
+    });
+});
+
+//Dedicated route test
+describe('POST /users/login', () => {
+    it('should login user and return auth token', (done) => {
+        request(app)
+        .post('/users/login')
+        .send({
+            email: users[1].email, 
+            password: users[1].password
+        })
+        .expect(200)
+        .expect((res) => {
+            expect(res.headers['x-auth']).toExist();
+        })
+        .end((err, res) => {
+            if (err){
+                return done(err);
+            }
+            User.findById(users[1]._id)
+                .then((user) => {
+                    //if user exists and has tokens
+                    expect(user.tokens[0]).toInclude({
+                        access: 'auth',
+                        token: res.headers['x-auth']
+                    });
+                    done();
+            }).catch((e) => done(e));
+        });
+    });
+
+    it('should reject invalid login', (done) => {
+        request(app)
+        .post('/users/login')
+        .send({
+            email: users[1].email, 
+            password: 'Junkpassword'
+        })
+        .expect(400)
+        .expect((res) => {
+            expect(res.headers['x-auth']).toNotExist();
+        })
+        .end((err, res) => {
+            if (err){
+                return done(err);
+            }
+            //even though the user exists there is no
+            //token to begin with as you see in the seed data
+            //in seed.js
+            User.findById(users[1]._id)
+                .then((user) => {
+                    expect(user.tokens.length).toBe(0);
+                    done();
+            }).catch((e) => done(e));
+        });
     });
 });

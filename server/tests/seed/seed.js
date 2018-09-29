@@ -43,14 +43,14 @@ const todos = [
 ];
 
 const populateTodos = (done) => {
-    Todo.remove({}).then(() => {
+    Todo.remove().then(() => {
        //insertMany
        return Todo.insertMany(todos); 
     }).then(() => done());
 };
 
 const populateUsers = (done) => {
-    User.remove({}).then(() => {
+    User.remove().then(() => {
         //Two promises 
         //Also middleware runs due to the call of save()
         var userOne = new User(users[0]).save();
