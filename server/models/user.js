@@ -58,7 +58,7 @@ UserSchema.methods.generateAuthToken = function(){
     // access - use ES6 
     // secret - will eventually come from a config file
     var token = jwt.sign({_id: user._id.toHexString(),
-                 access}, 'abc123').toString();
+                 access}, process.env.JWT_SECRET).toString();
     
     //user.tokens.push({access, token});
     //instead use this - inconsistencies across mongoDB 
@@ -85,7 +85,7 @@ UserSchema.statics.findByToken = function(token){
     //We will use try-catch that way we can catch
     // any error that jwt throw
     try{
-        decoded = jwt.verify(token, 'abc123');
+        decoded = jwt.verify(token, process.env.JWT_SECRET);
     }
     catch(e) {
         // return new Promise((resolve, reject) => {
