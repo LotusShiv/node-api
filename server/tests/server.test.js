@@ -149,7 +149,7 @@ describe('DELETE /todos/:id', () =>{
             //Now lets see if the id exists in db 
             //it shouldn't exist so return 404
             Todo.findById(hexId).then((todo) => {
-                expect(todo).toNotExist();
+                expect(todo).toBeFalsy();
                 done();
             })
             .catch((err) => done(err));
@@ -172,7 +172,7 @@ describe('DELETE /todos/:id', () =>{
             //it should exist as we haven't deleted that
             //todo document
             Todo.findById(hexId).then((todo) => {
-                expect(todo).toExist();
+                expect(todo).toBeTruthy(); //toExist();
                 done();
             })
             .catch((err) => done(err));
@@ -219,7 +219,8 @@ describe('PATCH /todos/:id', () => {
         .expect((res) => {
             expect(res.body.todo.text).toBe(doc.text);
             expect(res.body.todo.completed).toBe(true);
-            expect(res.body.todo.completedAt).toBeA('number');
+            //expect(res.body.todo.completedAt).toBeA('number');
+            expect(typeof res.body.todo.completedAt).toBe('number');
         })
         .end((err, res) => {
           if (err){
@@ -230,9 +231,7 @@ describe('PATCH /todos/:id', () => {
           Todo.findByIdAndUpdate(hexId 
             ,{$set:doc}
             ,{new:true}).then((todo) => {
-              expect(todo).toExist();
-              //expect(todo.completed).toBe(true);
-              //expect(todo.completedAt).toBeA('number');
+              expect(todo).toBeTruthy();
               done();
           })
           .catch((err) => done(err));
@@ -265,7 +264,8 @@ describe('PATCH /todos/:id', () => {
         .expect((res) => {
             expect(res.body.todo._id).toBe(hexId);
             expect(res.body.todo.completed).toBe(false);
-            expect(res.body.todo.completedAt).toNotBeA('number');
+            //expect(res.body.todo.completedAt).toNotBeA('number');
+            expect(typeof res.body.todo.completedAt).not.toBe('number');
         })
         //.end(done)
         .end((err, res) => {
@@ -277,7 +277,7 @@ describe('PATCH /todos/:id', () => {
           Todo.findByIdAndUpdate(hexId 
             ,{$set:{doc}}
             ,{new:true}).then((todo) => {
-              expect(todo).toExist();
+              expect(todo).toBeTruthy();
               done();
           })
           .catch((err) => done(err));
@@ -321,8 +321,8 @@ describe('Post /users', () => {
         .send({email, password})
         .expect(200)
         .expect((res) => {
-            expect(res.headers['x-auth']).toExist();
-            expect(res.body._id).toExist();
+            expect(res.headers['x-auth']).toBeTruthy();
+            expect(res.body._id).toBeTruthy();
             expect(res.body.email).toBe(email);
         })
         //.end(done); 
@@ -333,10 +333,10 @@ describe('Post /users', () => {
             }
 
             User.findOne({email}).then((user) => {
-                expect(user).toExist();
+                expect(user).toBeTruthy();
                 //check if stored password is not input password,
                 //if so then we haven't hashed that leads to problems
-                expect(user.password).toNotBe(password);
+                expect(user.password).not.toBe(password);
                 done();
             }).catch((e) => done(e));
         });
@@ -372,7 +372,7 @@ describe('POST /users/login', () => {
         })
         .expect(200)
         .expect((res) => {
-            expect(res.headers['x-auth']).toExist();
+            expect(res.headers['x-auth']).toBeTruthy();
         })
         .end((err, res) => {
             if (err){
@@ -380,8 +380,17 @@ describe('POST /users/login', () => {
             }
             User.findById(users[1]._id)
                 .then((user) => {
+                    //Since the /users/login sends the user back with a token we end
+                    //up with the response user object having an array of 2
+                    //tokens hence the length of tokens array = 2 with the second one matching
+                    //the seed user's token, as the new tokens are added on the top of the
+                    //chain, hence we need to assert with tokens[1] and not tokens[0]
+                    //console.log('seed users[1] tokens ', JSON.stringify(users[1].tokens,undefined,2));
+                    //console.log('route returned user object - tokens length is ', user.tokens.length);
+                    //console.log('tokens', JSON.stringify(user.tokens, undefined, 2));
+
                     //if user exists and has tokens
-                    expect(user.tokens[1]).toInclude({
+                    expect(user.toObject().tokens[1]).toMatchObject({
                         access: 'auth',
                         token: res.headers['x-auth']
                     });
@@ -399,7 +408,7 @@ describe('POST /users/login', () => {
         })
         .expect(400)
         .expect((res) => {
-            expect(res.headers['x-auth']).toNotExist();
+            expect(res.headers['x-auth']).toBeFalsy();
         })
         .end((err, res) => {
             if (err){
